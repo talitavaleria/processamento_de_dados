@@ -1,0 +1,66 @@
+JMP MAIN
+
+;Multiplicação dos valores guardados em B e D
+;Armazena o incremento
+MULT:
+  ADD B; A+=B
+  DCR D; D--
+  CNZ MULT
+
+  RET
+
+; Divide B por C
+; B está armazenado em A
+DIV:
+  CMP C
+  RM
+
+  SUB C; A-=C
+  JP DIV; if(a >= 0) goto DIV
+
+SWAP:
+  MOV B, C
+  MOV C, A
+
+  MOV A, B
+
+  RET
+
+;B -> Maior
+;C -> Menor
+MMC:
+
+  MOV E, A; resultado do ficará salvo no Reg E
+  
+  CALL DIV
+  CPI 0
+  RZ
+  
+  INR D; D++
+  PUSH D
+  MVI A,0
+  
+  CALL MULT
+  
+  POP D
+
+  JMP MMC
+  
+
+MAIN:
+  MVI B, 3; B=4
+  MVI C, 4; C=3
+
+  ;Compara B e C
+  MOV A, B; A=B
+  CMP C
+
+  CC SWAP; if(B < C) swap(B, C)
+
+  MOV A, B; A recebe o maior valor A=B
+  MVI D,1; D=1, incrementa a cada iteração do MMC
+  
+  CALL MMC
+
+  HLT
+  

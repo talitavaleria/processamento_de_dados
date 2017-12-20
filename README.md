@@ -1,1 +1,4 @@
-# asm80
+# Processamento de Dados - IFPB
+
+Repositório com códigos referentes a disciplina
+
