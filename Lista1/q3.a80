@@ -1,0 +1,138 @@
+; Questão 3 - Média ponderada
+; Registrador D armazenará a parte inteira da divisão
+; Registrador A armazenará o resto da divisão
+
+
+JMP MAIN
+
+;Num Peso
+
+N1: DW 0205H
+N2: DW 0302H
+N3: DW 0103H
+N4: DW 0702H
+N5: DW 0202H
+
+;Multiplicação dos valores guardados em B e D
+;Armazena o incremento
+MULT:
+  ADD H; A+=H
+  DCR L; L--
+  CNZ MULT
+
+  RET
+
+; Divide B por C
+; B está armazenado em A
+; resultado da divisão ficará salvo em D
+DIV:
+  CMP C
+  RM
+
+  SUB C; A-=C
+  INR D
+  JP DIV; if(a >= 0) goto DIV
+
+;Soma dos pesos será salvo no regC
+;Soma os pesos para realizar a divisão
+SOMA_PESOS:
+  MOV A, C; A=C
+    ADD L   ; A+=L
+    MOV C, A; C=A
+
+  RET
+
+SWAP:
+  MOV H, L
+  MOV L, A
+
+  MOV A, H
+
+  RET
+
+;soma o resultado da multiplicação de cada numero pelo peso
+ACC:
+    
+    XTHL; faz o swap do top da pilha com H+L para salvar o PUSH referente
+      ; à função ACC
+    
+    MOV D, C; salva o valor de C em D, pois o POP irá sobrescrever o valor de C
+    
+    MVI A, 0
+    
+    POP B
+    ADD B; A+=B
+    
+    POP B
+    ADD B; A+=B
+    
+    POP B
+    ADD B; A+=B
+    
+    POP B
+    ADD B; A+=B
+    
+    POP B
+    ADD B; A+=B
+    
+    XTHL; coloca no topo da pilha o PUSH referente à função ACC
+    
+    MOV C, D
+    
+    RET
+
+;realiza o calculo do numero pelo peso
+CALC:
+    ;Compara H e L
+    MOV A, H; A=B
+    CMP L
+
+  CALL SOMA_PESOS
+
+  CC SWAP; if(H < L) swap(H, L)
+    
+    ;CALL SOMA_PESOS
+    
+    MVI A, 0
+    CALL MULT
+    
+    MOV B, A; B=A
+    
+    ;PUSH B ;coloca na pilha o resultado da multiplicação
+    
+    RET
+  
+    
+MAIN:
+  
+    MVI C, 0; Inicializa com zero para fazer a soma dos pesos
+    
+  LHLD N1
+    CALL CALC
+    PUSH B
+    
+    LHLD N2
+    CALL CALC
+    PUSH B
+    
+    LHLD N3
+    CALL CALC
+    PUSH B
+    
+    LHLD N4
+    CALL CALC
+    PUSH B
+    
+    LHLD N5
+    CALL CALC
+    PUSH B
+
+  MOV D, C
+    PUSH D
+    
+    CALL ACC
+    
+    MVI D,0
+    CALL DIV; Divide pela soma dos pesos
+    
+  HLT
