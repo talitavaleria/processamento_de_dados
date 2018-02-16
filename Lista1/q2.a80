@@ -1,0 +1,151 @@
+; Questão 2 - Calculo de CRC
+; CRC será salvo no registrador B
+; Dado será salvo no registrador C
+
+JMP MAIN
+
+INIT: DB 80H
+
+DATA: DB 5H
+CRC: DB 16H
+
+CRC_ORDER: DB 4h
+CRC_SIZE:  DB 5H
+DATA_SIZE: DB 3H
+
+SHIFT_DATA:
+
+    RLC
+    DCR B
+    CNZ SHIFT_DATA
+    
+    RET
+    
+SHIFT_CRC:
+    
+    RLC
+    DCR B
+    CNZ SHIFT_CRC
+    
+    RET
+
+; Desloca para a direita B vezes (quantidade de iterações já ocorridas)
+SHIFT_RIGHT_N_TIMES:
+
+     RRC
+     DCR B
+     CNZ SHIFT_RIGHT_N_TIMES
+     
+     RET
+
+; Procura o próximo bit 1 no resultado parcial do CRC
+FIND_NEXT_ONE:
+    
+    MOV A, C
+    
+    ANA D
+    CPI 0
+    
+    MOV A, D
+    RRC
+    MOV D, A
+    
+    RNZ ;retorna se achou bit 1 no resultado parcial do CRC
+    
+    CPI 0
+    RZ ;Retorna se não existir mais bit 1 no resultado parcial do CRC
+    
+    INR B
+    
+    CALL FIND_NEXT_ONE
+    
+    RET
+
+CALC_QNT_BITS_NEXT_ONE:
+    
+    LDA INIT
+    
+    ;PUSH B
+    
+    ;MOV A, C; resultado anterior da operação XOR
+    CALL SHIFT_RIGHT_N_TIMES
+    
+    MVI B, 0
+    MOV D, A
+    
+    CALL FIND_NEXT_ONE
+
+    ;desloca o CRC até o próximo bit 1 do resultado
+    MOV A, E
+    PUSH B
+    CALL SHIFT_RIGHT_N_TIMES
+    POP B
+    MOV E, A
+    
+    RET
+
+CRC_CALC:
+    
+    XRA E
+
+    MOV C, A
+
+    INR B
+    
+    PUSH B
+    
+    CALL CALC_QNT_BITS_NEXT_ONE
+    
+    LDA CRC_SIZE
+    ADD B
+    POP B
+    ADD B
+    
+    CPI 8
+    RNZ
+    
+    MOV A, B
+    CPI 0
+    RZ ;retorna se não houver mais bit 1 setado
+    
+    MOV A, C
+    CNZ CRC_CALC
+
+    RET
+
+MAIN: 
+    LDA CRC_ORDER
+    MOV B, A; salva em B CRC_SIZE para realizar o descolacomento para a esquerda
+    LDA DATA
+
+    CALL SHIFT_DATA
+    MOV D, A; Salva em RegD o resultado de DATA << CRC_SIZE
+    
+    ;Calcula a quantidade de bits que CRC_DATA precisa deslocar
+    LDA CRC_SIZE 
+    MOV C, A
+    LDA DATA_SIZE
+    MOV B, A
+    LDA CRC_ORDER
+    ADD B
+    SUB C
+    MOV B, A; Armazena a quantidade de interações necessárias para o calculo do CRC
+    PUSH B
+    
+    LDA CRC
+    
+    CALL SHIFT_CRC
+    MOV E, A; Armazena o CRC desloca
+    
+    ;POP B
+    
+    MOV A, D
+    MVI B, 0
+    CALL CRC_CALC
+    
+    MOV B, C ;Salva CRC em B
+    LDA DATA
+    MOV C, A ;Salva dado em C
+    
+
+    HLT
